@@ -2,9 +2,6 @@ import requests
 import pandas as pd
 import time
 
-# ★★★ ここにご自身の NVD API キーを直接記載 ★★★
-API_KEY = "Your API Key"
-
 def get_highest_cvss_from_text(cve_text: str, delimiter: str = ','):
     """
     文字列で与えられた複数 CVE から、ベーススコアが最大のものを返す。
@@ -34,13 +31,9 @@ def get_highest_cvss_from_text(cve_text: str, delimiter: str = ','):
     for idx, cve_id in enumerate(cve_list, 1):
         print(f"[{idx}/{len(cve_list)}] {cve_id} を取得中 … ", end="", flush=True)
         url = f"https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={cve_id}"
-        headers = {
-            "User-Agent": "cvss-highest-fetch",
-            "apiKey": API_KEY
-        }
 
         try:
-            resp = requests.get(url, headers=headers, timeout=30)
+            resp = requests.get(url, timeout=30)
             resp.raise_for_status()
             data = resp.json()
 
@@ -105,7 +98,7 @@ def get_highest_cvss_from_text(cve_text: str, delimiter: str = ','):
             })
 
         # NVD の無料 API レート制限(60 req/min)対策
-        time.sleep(0.6)
+        time.sleep(1)
 
     # -------------------------------------------------------------
     # 3) 取得結果を一覧表示（エラーのみ）
