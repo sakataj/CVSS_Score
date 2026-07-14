@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import time
+import math
 
 def get_highest_cvss_from_text(cve_text: str, delimiter: str = ','):
     """
@@ -20,7 +21,9 @@ def get_highest_cvss_from_text(cve_text: str, delimiter: str = ','):
         print("CVE-ID が検出できませんでした。")
         return None
 
-    print(f"\n取得対象 CVE ({len(cve_list)} 件): {', '.join(cve_list)}\n")
+    print(f"\n取得対象 CVE {len(cve_list)} 件")
+    if len(cve_list) >= 10:
+        print(f"※ 10件以上の CVE を指定しています。未登録ユーザーのNVD API のレート制限5req/30secのため、推定所要時間 { math.ceil(len(cve_list) * 6/60) } 分です。")
 
     # -------------------------------------------------------------
     # 2) 各 CVE について NVD API を呼び出し
@@ -89,6 +92,13 @@ def get_highest_cvss_from_text(cve_text: str, delimiter: str = ','):
 
         except Exception as e:
             err_msg = str(e)
+            
+            # レート制限にかかったら 再試行するようにしたいが、forループ内を関数として切り出す必要があるため、別途検討する
+            #
+            # if "Too Many Requests" in err_msg:
+            #     # NVD API レート制限により取得失敗 (Too Many Requests)
+            #     print("Too Many Requests により取得失敗。15秒待機して再試行します。")
+
             print(f"エラー: {err_msg}")
             records.append({
                 "CVE_ID": cve_id,
@@ -98,7 +108,9 @@ def get_highest_cvss_from_text(cve_text: str, delimiter: str = ','):
             })
 
         # NVD の無料 API レート制限(60 req/min)対策
-        time.sleep(1)
+        # 無料のユーザー登録すれば10倍早くなるが、頬っておけば終わるのでこのままとする
+        #  参考 https://nvd.nist.gov/developers/start-here#:~:text=this%20optional%20information.-,Rate%20Limits,-NIST%20firewall%20rules
+        time.sleep(6)
 
     # -------------------------------------------------------------
     # 3) 取得結果を一覧表示（エラーのみ）
